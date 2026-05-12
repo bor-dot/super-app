@@ -1,0 +1,8 @@
+cd sonarat-fixed
+git init
+git remote add origin https://github.com/bor-dot/haber.git
+git fetch origin
+git checkout -b main --track origin/main
+git add src/App.tsx src/types.ts
+git commit -m "fix: apply all debug fixes"
+git push origin main
