@@ -19,7 +19,7 @@ export const modules=[
 {id:"depth",title:"Piyasa Derinlik ve Kademe Analizi",group:"Market",source:"sonarat_ak_piyasa_derinlik_ve_kademe_analizi",icon:"stacked_line_chart",status:"Aktif"},
 {id:"portfolio",title:"Portföy Analiz Terminali",group:"Portfolio",source:"sonarat_ak_portf_y_analiz_terminali",icon:"pie_chart",status:"Aktif"},
 {id:"stock-compare",title:"Hisse Kıyaslama Modu",group:"Portfolio",source:"sonarat_ak_hisse_k_yaslama_modu",icon:"compare_arrows",status:"Aktif"},
-{id:"holding-discount",title:"Holding İskonto ve İştirak Analizi",group:"Portfolio",source:"sonarat_ak_holding_i_skonto_ve_i_tirak_analizi",icon:"account_tree",status:"Aktif"},
+{id:"holding-discount",title:"İskontolu Ucuz Hisseler",group:"Portfolio",source:"sonarat_ak_iskontolu_ucuz_hisseler",icon:"percent",status:"Aktif"},
 {id:"institutional-flow",title:"Kurumsal Akış ve Balina Takibi",group:"Institutional",source:"sonarat_ak_kurumsal_ak_ve_balina_takibi",icon:"waves",status:"Aktif"},
 {id:"corporate-panel",title:"Entegre Kurumsal Akış Paneli",group:"Institutional",source:"sonarat_ak_entegre_kurumsal_ak_paneli",icon:"corporate_fare",status:"Aktif"},
 {id:"desktop-terminal",title:"Masaüstü Terminal Akışı",group:"Desktop",source:"sonarat_ak_masa_st_terminal_ak",icon:"desktop_windows",status:"Aktif"},
