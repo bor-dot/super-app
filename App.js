@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import Icon from "./components/Icon";
 import MobilePreview from "./components/MobilePreview";
 import ModulePanel from "./components/ModulePanel";
-import NewsFeed from "./components/NewsFeed";
+import ModuleWorkspace from "./components/ModuleWorkspace";
 import Sidebar from "./components/Sidebar";
 import TickerBar from "./components/TickerBar";
 import { moduleGroups, modules } from "./data/screens";
@@ -24,6 +24,7 @@ export default function App() {
     <main className="min-h-screen bg-background text-on-surface">
       <div className="flex min-h-screen overflow-hidden">
         <Sidebar selectedId={selectedId} onSelect={setSelectedId} />
+
         <section className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-40 border-b border-outline-variant/20 bg-background/85 backdrop-blur-xl lg:hidden">
             <div className="flex h-16 items-center justify-between px-4">
@@ -31,7 +32,12 @@ export default function App() {
                 <h1 className="font-display text-xl font-bold text-on-surface">Sonarat Akışı</h1>
                 <p className="font-ticker text-[10px] uppercase text-on-primary-container">Terminal Access</p>
               </div>
-              <button type="button" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="grid h-10 w-10 place-items-center rounded-full border border-outline-variant/30 text-primary" aria-label="Modül menüsü">
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="grid h-10 w-10 place-items-center rounded-full border border-outline-variant/30 text-primary"
+                aria-label="Modül menüsü"
+              >
                 <Icon name={mobileMenuOpen ? "close" : "menu"} />
               </button>
             </div>
@@ -42,7 +48,19 @@ export default function App() {
                     <p className="mb-2 font-ticker text-[10px] uppercase text-on-primary-container">{group}</p>
                     <div className="grid gap-2">
                       {items.map((item) => (
-                        <button key={item.id} type="button" onClick={() => { setSelectedId(item.id); setMobileMenuOpen(false); }} className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-left text-sm ${item.id === selectedId ? "border-primary/40 bg-surface-container-high text-on-surface" : "border-outline-variant/20 bg-white/[0.02] text-on-surface-variant"}`}>
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedId(item.id);
+                            setMobileMenuOpen(false);
+                          }}
+                          className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-left text-sm ${
+                            item.id === selectedId
+                              ? "border-primary/40 bg-surface-container-high text-on-surface"
+                              : "border-outline-variant/20 bg-white/[0.02] text-on-surface-variant"
+                          }`}
+                        >
                           <Icon name={item.icon} className="text-[19px] text-primary" />
                           {item.title}
                         </button>
@@ -53,14 +71,25 @@ export default function App() {
               </div>
             )}
           </header>
+
           <TickerBar />
+
           <div className="flex items-center gap-6 overflow-x-auto border-b border-outline-variant/20 bg-background/90 px-4 pt-4 font-ticker text-sm md:px-8">
-            {["Anlık", "Sana Özel", "Holding Analiz", "Alarm Merkezi", "Piyasa Tarama"].map((tab, index) => (
-              <button key={tab} type="button" className={`shrink-0 px-2 pb-3 ${index === 0 ? "border-b-2 border-primary font-bold text-primary" : "text-on-primary-container hover:text-on-surface"}`}>
+            {["Anlık", "Sana Özel", "Ucuz Hisseler", "Alarm Merkezi", "Piyasa Tarama"].map((tab, index) => (
+              <button
+                key={tab}
+                type="button"
+                className={`shrink-0 px-2 pb-3 ${
+                  index === 0
+                    ? "border-b-2 border-primary font-bold text-primary"
+                    : "text-on-primary-container hover:text-on-surface"
+                }`}
+              >
                 {tab}
               </button>
             ))}
           </div>
+
           <div className="min-h-0 flex-1 overflow-y-auto">
             <div className="mx-auto flex w-full max-w-[1180px] gap-8 px-4 py-6 md:px-8">
               <section className="min-w-0 flex-1">
@@ -71,8 +100,14 @@ export default function App() {
                         <Icon name={selected.icon} className="text-[16px]" />
                         {selected.group}
                       </div>
-                      <h2 className="max-w-3xl font-display text-3xl font-bold leading-tight text-on-surface md:text-5xl">{selected.title}</h2>
-                      <p className="mt-4 max-w-2xl leading-7 text-on-surface-variant">Canlı KAP/şirket haberleri, piyasa taraması, alarm motoru ve şirket analizleri aynı terminal kabuğunda çalışıyor.</p>
+                      <h2 className="max-w-3xl font-display text-3xl font-bold leading-tight text-on-surface md:text-5xl">
+                        {selected.title}
+                      </h2>
+                      <p className="mt-4 max-w-2xl leading-7 text-on-surface-variant">
+                        KAP ve şirket haberleri, piyasa taraması, alarm motorları ve iskonto odaklı hisse
+                        listeleri tek akışta çalışır. Veriler canlı kaynaklardan geldikçe güncellenir; kaynak
+                        erişilemezse terminal boş kalmasın diye son güvenilir örnek set devreye girer.
+                      </p>
                     </div>
                     <div className="grid grid-cols-3 gap-2 md:w-72">
                       <Stat label="Ekran" value={modules.length} />
@@ -81,9 +116,14 @@ export default function App() {
                     </div>
                   </div>
                 </div>
-                <div className="mb-6 lg:hidden"><MobilePreview /></div>
-                <NewsFeed />
+
+                <div className="mb-6 lg:hidden">
+                  <MobilePreview />
+                </div>
+
+                <ModuleWorkspace selected={selected} />
               </section>
+
               <ModulePanel selectedId={selectedId} onSelect={setSelectedId} />
             </div>
           </div>
