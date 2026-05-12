@@ -1,3 +1,30 @@
-import Icon from "./Icon";import{modules}from"../data/screens";
-export default function ModulePanel({selectedId,onSelect}){const selected=modules.find((item)=>item.id===selectedId)||modules[0];const siblings=modules.filter((item)=>item.group===selected.group&&item.id!==selected.id).slice(0,5);return <aside className="hidden w-80 shrink-0 xl:block"><div className="glass-panel sticky top-20 rounded-xl p-5"><div className="mb-5 flex items-start justify-between gap-3"><div><p className="font-ticker text-xs uppercase text-on-primary-container">{selected.group}</p><h2 className="mt-1 font-display text-xl font-semibold text-on-surface">{selected.title}</h2></div><div className="grid h-10 w-10 place-items-center rounded-lg bg-surface-variant"><Icon name={selected.icon} className="text-primary"/></div></div><div className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-4"><p className="font-ticker text-xs uppercase text-on-primary-container">Stitch source</p><p className="mt-2 break-words font-ticker text-sm text-primary">{selected.source}</p></div><div className="mt-4 grid grid-cols-2 gap-3"><Metric label="Durum" value={selected.status}/><Metric label="Modül" value={selected.group}/></div><div className="mt-5"><p className="mb-2 font-ticker text-xs uppercase text-on-primary-container">Aynı modül ailesi</p><div className="space-y-2">{siblings.map((item)=><button key={item.id} type="button" onClick={()=>onSelect(item.id)} className="flex w-full items-center gap-2 rounded-lg border border-outline-variant/20 bg-white/[0.02] px-3 py-2 text-left text-sm text-on-surface-variant hover:border-primary/40 hover:text-on-surface"><Icon name={item.icon} className="text-[18px] text-primary"/><span className="truncate">{item.title}</span></button>)}</div></div></div></aside>}
-function Metric({label,value}){return <div className="rounded-lg border border-outline-variant/20 bg-white/[0.02] p-3"><p className="font-ticker text-[10px] uppercase text-on-primary-container">{label}</p><p className="mt-1 text-sm font-semibold text-on-surface">{value}</p></div>}
+import { useEffect, useState } from "react";
+import Icon from "./Icon";
+import { modules } from "../data/screens";
+
+export default function ModulePanel({ selectedId, onSelect }) {
+  const selected = modules.find((item) => item.id === selectedId) || modules[0];
+  const siblings = modules.filter((item) => item.group === selected.group && item.id !== selected.id).slice(0, 5);
+  const [alerts, setAlerts] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadAlarms() {
+      try { const response = await fetch("/api/alarms"); const data = await response.json(); if (!cancelled && Array.isArray(data.alerts)) setAlerts(data.alerts.slice(0, 4)); } catch { if (!cancelled) setAlerts([]); }
+    }
+    loadAlarms();
+    const timer = window.setInterval(loadAlarms, 60000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, []);
+
+  return (
+    <aside className="hidden w-80 shrink-0 xl:block"><div className="glass-panel sticky top-20 rounded-xl p-5">
+      <div className="mb-5 flex items-start justify-between gap-3"><div><p className="font-ticker text-xs uppercase text-on-primary-container">{selected.group}</p><h2 className="mt-1 font-display text-xl font-semibold text-on-surface">{selected.title}</h2></div><div className="grid h-10 w-10 place-items-center rounded-lg bg-surface-variant"><Icon name={selected.icon} className="text-primary" /></div></div>
+      <div className="rounded-lg border border-outline-variant/30 bg-surface-container-lowest p-4"><p className="font-ticker text-xs uppercase text-on-primary-container">Stitch source</p><p className="mt-2 break-words font-ticker text-sm text-primary">{selected.source}</p></div>
+      <div className="mt-4 grid grid-cols-2 gap-3"><Metric label="Durum" value={selected.status} /><Metric label="Modül" value={selected.group} /></div>
+      <div className="mt-5"><p className="mb-2 font-ticker text-xs uppercase text-on-primary-container">Canlı alarm motoru</p><div className="space-y-2">{alerts.length ? alerts.map((alert) => <div key={alert.id} className="rounded-lg border border-outline-variant/20 bg-white/[0.02] p-3"><div className="flex items-center justify-between gap-2"><span className={`font-ticker text-[10px] uppercase ${alert.severity === "critical" ? "text-red-soft" : "text-gold"}`}>{alert.severity}</span>{alert.symbol && <span className="font-ticker text-xs text-primary">{alert.symbol}</span>}</div><p className="mt-1 line-clamp-2 text-sm font-semibold text-on-surface">{alert.title}</p><p className="mt-1 line-clamp-2 text-xs text-on-primary-container">{alert.reason}</p></div>) : <div className="rounded-lg border border-outline-variant/20 bg-white/[0.02] p-3 text-sm text-on-primary-container">Alarm motoru veri bekliyor.</div>}</div></div>
+      <div className="mt-5"><p className="mb-2 font-ticker text-xs uppercase text-on-primary-container">Aynı modül ailesi</p><div className="space-y-2">{siblings.map((item) => <button key={item.id} type="button" onClick={() => onSelect(item.id)} className="flex w-full items-center gap-2 rounded-lg border border-outline-variant/20 bg-white/[0.02] px-3 py-2 text-left text-sm text-on-surface-variant hover:border-primary/40 hover:text-on-surface"><Icon name={item.icon} className="text-[18px] text-primary" /><span className="truncate">{item.title}</span></button>)}</div></div>
+    </div></aside>
+  );
+}
+function Metric({ label, value }) { return <div className="rounded-lg border border-outline-variant/20 bg-white/[0.02] p-3"><p className="font-ticker text-[10px] uppercase text-on-primary-container">{label}</p><p className="mt-1 text-sm font-semibold text-on-surface">{value}</p></div>; }
