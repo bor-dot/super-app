@@ -5,11 +5,8 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Sonarat News Stream</title>
-        <meta
-          name="description"
-          content="Kurumsal haber akışı, alarm aktivasyonu ve iştirak haritası için mobil öncelikli dashboard."
-        />
+        <title>Sonarat Akışı</title>
+        <meta name="description" content="Sonarat Akışı finans terminali, haber akışı, alarm merkezi ve piyasa analiz modülleri." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <App />

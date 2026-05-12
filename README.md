@@ -1,6 +1,10 @@
 # Super App
 
-Next.js ve Tailwind CSS ile hazırlanmış mobil öncelikli kurumsal haber/alarm arayüzü.
+Sonarat Akışı Stitch çıktısından Next.js ve Tailwind CSS uyumlu hale getirilmiş finans terminali arayüzü.
+
+Kaynak Stitch export klasörü:
+
+`/Users/talat/Downloads/stitch_sonarat_news_stream`
 
 ## Çalıştırma
 
@@ -12,7 +16,3 @@ npm run dev
 ## Vercel
 
 Bu repo GitHub'a gönderildiğinde Vercel projeyi otomatik olarak Next.js uygulaması olarak algılar.
-
-- Build command: `npm run build`
-- Development command: `npm run dev`
-- Output directory: Next.js varsayılanı
