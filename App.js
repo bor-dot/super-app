@@ -11,6 +11,13 @@ export default function App() {
   const [selectedId, setSelectedId] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const selected = modules.find((item) => item.id === selectedId) || modules[0];
+  const topTabs = [
+    { label: "Anlık", id: "dashboard" },
+    { label: "Sana Özel", id: "mobile-summary" },
+    { label: "Ucuz Hisseler", id: "holding-discount" },
+    { label: "Alarm Merkezi", id: "alarm-center" },
+    { label: "Piyasa Tarama", id: "market-scan" }
+  ];
 
   const visibleGroups = useMemo(
     () =>
@@ -75,17 +82,18 @@ export default function App() {
           <TickerBar />
 
           <div className="flex items-center gap-6 overflow-x-auto border-b border-outline-variant/20 bg-background/90 px-4 pt-4 font-ticker text-sm md:px-8">
-            {["Anlık", "Sana Özel", "Ucuz Hisseler", "Alarm Merkezi", "Piyasa Tarama"].map((tab, index) => (
+            {topTabs.map((tab) => (
               <button
-                key={tab}
+                key={tab.id}
                 type="button"
+                onClick={() => setSelectedId(tab.id)}
                 className={`shrink-0 px-2 pb-3 ${
-                  index === 0
+                  selectedId === tab.id
                     ? "border-b-2 border-primary font-bold text-primary"
                     : "text-on-primary-container hover:text-on-surface"
                 }`}
               >
-                {tab}
+                {tab.label}
               </button>
             ))}
           </div>
