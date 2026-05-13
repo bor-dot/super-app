@@ -50,6 +50,8 @@ const communityPosts = [
 export default function App() {
   const [economyNews, setEconomyNews] = useState(fallbackEconomyNews);
   const [selectedSymbol, setSelectedSymbol] = useState("BIST100");
+  const [symbols, setSymbols] = useState(BIST_SYMBOLS);
+  const [symbolsLive, setSymbolsLive] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,9 +76,31 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSymbols() {
+      try {
+        const response = await fetch("/api/symbols");
+        const data = await response.json();
+        if (!cancelled && Array.isArray(data.symbols) && data.symbols.length) {
+          setSymbols(data.symbols);
+          setSymbolsLive(Boolean(data.isLive));
+        }
+      } catch {
+        if (!cancelled) {
+          setSymbols(BIST_SYMBOLS);
+          setSymbolsLive(false);
+        }
+      }
+    }
+
+    loadSymbols();
+  }, []);
+
   const selectedMeta = useMemo(
-    () => BIST_SYMBOLS.find((item) => item.symbol === selectedSymbol) || BIST_SYMBOLS[0],
-    [selectedSymbol]
+    () => symbols.find((item) => item.symbol === selectedSymbol) || BIST_SYMBOLS[0],
+    [selectedSymbol, symbols]
   );
   const aiSummary = useMemo(() => economyNews.slice(0, 3), [economyNews]);
 
@@ -90,7 +114,12 @@ export default function App() {
           <MarketStrip />
           <div className="space-y-4 p-4">
             <TerminalHeader selectedMeta={selectedMeta} />
-            <ChartPanel selectedSymbol={selectedSymbol} setSelectedSymbol={setSelectedSymbol} />
+            <ChartPanel
+              selectedSymbol={selectedSymbol}
+              setSelectedSymbol={setSelectedSymbol}
+              symbols={symbols}
+              symbolsLive={symbolsLive}
+            />
             <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
               <IndicatorStack selectedSymbol={selectedSymbol} />
               <AnalysisTable selectedSymbol={selectedSymbol} />
@@ -234,24 +263,19 @@ function TerminalHeader({ selectedMeta }) {
   );
 }
 
-function ChartPanel({ selectedSymbol, setSelectedSymbol }) {
+function ChartPanel({ selectedSymbol, setSelectedSymbol, symbols, symbolsLive }) {
   return (
     <section className="rounded-lg border border-white/10 bg-[#0a1315] p-3">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <select
+          <SymbolSearch
             value={selectedSymbol}
-            onChange={(event) => setSelectedSymbol(event.target.value)}
-            className="h-10 max-w-[260px] rounded-lg border border-white/10 bg-[#071011] px-3 font-ticker text-sm text-white outline-none focus:border-emerald-300/50"
-            aria-label="BIST hissesi sec"
-          >
-            {BIST_SYMBOLS.map((item) => (
-              <option key={item.symbol} value={item.symbol}>
-                {item.symbol} - {item.name}
-              </option>
-            ))}
-          </select>
-          <span className="hidden font-ticker text-xs text-white/40 md:inline">BIST hisse havuzu</span>
+            symbols={symbols}
+            onChange={setSelectedSymbol}
+          />
+          <span className="hidden font-ticker text-xs text-white/40 md:inline">
+            {symbolsLive ? "Canlı BIST evreni" : "Yedek BIST evreni"} / {symbols.length} sembol
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <span className="rounded-md border border-emerald-400/30 bg-emerald-400/[0.12] px-3 py-1.5 font-ticker text-xs text-emerald-300">
@@ -262,6 +286,75 @@ function ChartPanel({ selectedSymbol, setSelectedSymbol }) {
       </div>
       <CustomChart symbol={selectedSymbol} />
     </section>
+  );
+}
+
+function SymbolSearch({ value, symbols, onChange }) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const selected = symbols.find((item) => item.symbol === value) || { symbol: value, name: value };
+  const selectedLabel = `${selected.symbol} - ${selected.name}`;
+
+  useEffect(() => {
+    setQuery(selectedLabel);
+  }, [selectedLabel]);
+
+  const filtered = useMemo(() => {
+    const normalizedQuery = query.toLocaleLowerCase("tr-TR").trim();
+    const normalizedSelected = selectedLabel.toLocaleLowerCase("tr-TR").trim();
+    const needle = normalizedQuery === normalizedSelected ? "" : normalizedQuery;
+    if (!needle) return symbols;
+    return symbols
+      .filter((item) => `${item.symbol} ${item.name}`.toLocaleLowerCase("tr-TR").includes(needle))
+      .slice(0, 180);
+  }, [query, selectedLabel, symbols]);
+
+  return (
+    <div className="relative w-[320px] max-w-full" onBlur={() => window.setTimeout(() => setOpen(false), 120)}>
+      <div className="flex h-11 items-center gap-2 rounded-lg border border-white/10 bg-[#071011] px-3 focus-within:border-emerald-300/50">
+        <Icon name="search" className="text-[18px] text-emerald-300" />
+        <input
+          value={query}
+          onFocus={(event) => {
+            event.target.select();
+            setOpen(true);
+          }}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setOpen(true);
+          }}
+          className="min-w-0 flex-1 bg-transparent font-ticker text-sm text-white outline-none placeholder:text-white/40"
+          placeholder="BIST sembol ara"
+          aria-label="BIST sembol ara"
+        />
+      </div>
+      {open && (
+        <div className="absolute left-0 top-[48px] z-30 max-h-80 w-full overflow-y-auto rounded-lg border border-white/10 bg-[#081011] p-1 shadow-[0_18px_60px_rgba(0,0,0,0.55)]">
+          {filtered.map((item) => (
+            <button
+              key={item.symbol}
+              type="button"
+              onMouseDown={(event) => {
+                event.preventDefault();
+                onChange(item.symbol);
+                setQuery(`${item.symbol} - ${item.name}`);
+                setOpen(false);
+              }}
+              className={`flex w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left transition ${
+                item.symbol === value ? "bg-emerald-400/[0.14] text-emerald-100" : "text-white/70 hover:bg-white/[0.06] hover:text-white"
+              }`}
+            >
+              <span className="font-ticker text-sm font-bold">{item.symbol}</span>
+              <span className="min-w-0 flex-1 truncate text-xs text-white/50">{item.name}</span>
+            </button>
+          ))}
+          {!filtered.length && <div className="px-3 py-4 text-sm text-white/50">Sembol bulunamadı</div>}
+          <div className="border-t border-white/10 px-3 py-2 font-ticker text-[10px] uppercase tracking-wide text-white/40">
+            {filtered.length} / {symbols.length} sembol
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
