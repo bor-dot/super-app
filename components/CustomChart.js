@@ -1,8 +1,39 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-const DEFAULT_OVERLAYS = { rsi: true, atr: true };
+const DEFAULT_OVERLAYS = { ema20: true, ema50: true, rsi: true, atr: true };
+const TIMEFRAMES = [
+  { label: "1A", range: "1mo", interval: "1d" },
+  { label: "3A", range: "3mo", interval: "1d" },
+  { label: "6A", range: "6mo", interval: "1d" },
+  { label: "1Y", range: "1y", interval: "1d" },
+  { label: "5Y", range: "5y", interval: "1wk" }
+];
 
 export const CHART_OVERLAYS = [
+  {
+    key: "ema20",
+    label: "EMA20",
+    priceScaleId: "right",
+    color: "#a7f3d0",
+    buildData: (candles) => calculateEMA(candles, 20),
+    seriesOptions: {
+      lineWidth: 2,
+      priceLineVisible: false,
+      lastValueVisible: false
+    }
+  },
+  {
+    key: "ema50",
+    label: "EMA50",
+    priceScaleId: "right",
+    color: "#38bdf8",
+    buildData: (candles) => calculateEMA(candles, 50),
+    seriesOptions: {
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false
+    }
+  },
   {
     key: "rsi",
     label: "RSI",
@@ -40,6 +71,8 @@ export default function CustomChart({ symbol, height = 520, overlays = DEFAULT_O
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [enabledOverlays, setEnabledOverlays] = useState(overlays);
+  const [timeframe, setTimeframe] = useState(TIMEFRAMES[2]);
+  const [activeCandle, setActiveCandle] = useState(null);
 
   useEffect(() => {
     setEnabledOverlays(overlays);
@@ -53,10 +86,13 @@ export default function CustomChart({ symbol, height = 520, overlays = DEFAULT_O
       try {
         if (firstLoad) setLoading(true);
         setError("");
-        const response = await fetch(`/api/chart?symbol=${encodeURIComponent(symbol)}&range=6mo&interval=1d`);
+        const response = await fetch(
+          `/api/chart?symbol=${encodeURIComponent(symbol)}&range=${timeframe.range}&interval=${timeframe.interval}`
+        );
         const data = await response.json();
         if (!cancelled) {
           setPayload(data);
+          setActiveCandle(data.candles?.at(-1) || null);
           onMetaChange?.(data);
         }
       } catch (chartError) {
@@ -73,9 +109,10 @@ export default function CustomChart({ symbol, height = 520, overlays = DEFAULT_O
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [symbol, onMetaChange]);
+  }, [symbol, timeframe, onMetaChange]);
 
   const candles = useMemo(() => payload?.candles || [], [payload]);
+  const previousClose = payload?.previousClose;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -84,11 +121,14 @@ export default function CustomChart({ symbol, height = 520, overlays = DEFAULT_O
     let resizeObserver;
 
     async function buildChart() {
-      const { CandlestickSeries, ColorType, CrosshairMode, HistogramSeries, LineSeries, createChart } = await import("lightweight-charts");
+      const { CandlestickSeries, ColorType, CrosshairMode, HistogramSeries, LineSeries, LineStyle, createChart } = await import(
+        "lightweight-charts"
+      );
       if (removed || !containerRef.current) return;
 
       chartRef.current?.remove();
       chartRef.current = null;
+      const candleByTime = new Map(candles.map((candle) => [String(candle.time), candle]));
 
       const chart = createChart(container, {
         width: container.clientWidth,
@@ -108,13 +148,27 @@ export default function CustomChart({ symbol, height = 520, overlays = DEFAULT_O
         },
         timeScale: {
           borderColor: "rgba(148, 163, 184, 0.18)",
+          barSpacing: 9,
+          minBarSpacing: 3,
+          rightOffset: 8,
           timeVisible: true,
           secondsVisible: false
         },
         crosshair: {
           mode: CrosshairMode.Normal,
-          vertLine: { color: "rgba(52, 211, 153, 0.32)" },
-          horzLine: { color: "rgba(52, 211, 153, 0.32)" }
+          vertLine: { color: "rgba(52, 211, 153, 0.34)", labelBackgroundColor: "#059669" },
+          horzLine: { color: "rgba(52, 211, 153, 0.34)", labelBackgroundColor: "#059669" }
+        },
+        handleScale: {
+          axisPressedMouseMove: true,
+          mouseWheel: true,
+          pinch: true
+        },
+        handleScroll: {
+          mouseWheel: true,
+          pressedMouseMove: true,
+          horzTouchDrag: true,
+          vertTouchDrag: false
         },
         localization: {
           locale: "tr-TR",
@@ -127,15 +181,27 @@ export default function CustomChart({ symbol, height = 520, overlays = DEFAULT_O
       });
 
       const candleSeries = chart.addSeries(CandlestickSeries, {
-        upColor: "#00d09c",
+        upColor: "#10b981",
         downColor: "#ef6a4c",
         borderUpColor: "#65f4c2",
         borderDownColor: "#ff8b6b",
         wickUpColor: "#7fffd4",
         wickDownColor: "#ff9b7b",
-        priceLineColor: "#34d399"
+        priceLineColor: "#34d399",
+        lastValueVisible: true,
+        priceLineVisible: true
       });
       candleSeries.setData(candles.map(({ time, open, high, low, close }) => ({ time, open, high, low, close })));
+      if (Number.isFinite(Number(previousClose))) {
+        candleSeries.createPriceLine({
+          price: Number(previousClose),
+          color: "rgba(226, 232, 240, 0.38)",
+          lineWidth: 1,
+          lineStyle: LineStyle.Dashed,
+          axisLabelVisible: true,
+          title: "Onceki"
+        });
+      }
 
       const volumeSeries = chart.addSeries(HistogramSeries, {
         priceScaleId: "volume",
@@ -162,9 +228,17 @@ export default function CustomChart({ symbol, height = 520, overlays = DEFAULT_O
           color: definition.color
         });
         series.setData(indicatorData);
-        chart.priceScale(definition.priceScaleId).applyOptions(definition.scaleOptions);
+        if (definition.scaleOptions) {
+          chart.priceScale(definition.priceScaleId).applyOptions(definition.scaleOptions);
+        }
       });
 
+      chart.subscribeCrosshairMove((param) => {
+        const crosshairCandle = param.seriesData?.get(candleSeries);
+        setActiveCandle(
+          crosshairCandle?.time ? candleByTime.get(String(crosshairCandle.time)) || crosshairCandle : candles.at(-1) || null
+        );
+      });
       chart.timeScale().fitContent();
       chartRef.current = chart;
       resizeObserver = new ResizeObserver(() => {
@@ -180,8 +254,9 @@ export default function CustomChart({ symbol, height = 520, overlays = DEFAULT_O
       chartRef.current?.remove();
       chartRef.current = null;
     };
-  }, [candles, enabledOverlays, height, symbol]);
+  }, [candles, enabledOverlays, height, previousClose, symbol]);
 
+  const displayCandle = activeCandle || candles.at(-1) || null;
   const lastPrice = payload?.lastPrice;
   const changePercent = payload?.changePercent;
 
@@ -197,10 +272,30 @@ export default function CustomChart({ symbol, height = 520, overlays = DEFAULT_O
             <span className={Number(changePercent) >= 0 ? "font-ticker text-sm text-emerald-300" : "font-ticker text-sm text-red-300"}>
               {formatChange(changePercent)}
             </span>
+            {displayCandle && (
+              <span className="font-ticker text-xs text-white/60">
+                O {formatPrice(displayCandle.open)} H {formatPrice(displayCandle.high)} L {formatPrice(displayCandle.low)} C{" "}
+                {formatPrice(displayCandle.close)} V {formatVolume(displayCandle.volume)}
+              </span>
+            )}
             <span className="font-ticker text-xs text-white/40">{formatUpdated(payload?.updatedAt)}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="mr-1 flex rounded-md border border-white/10 bg-white/[0.03] p-1">
+            {TIMEFRAMES.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => setTimeframe(item)}
+                className={`rounded px-2.5 py-1 font-ticker text-xs transition ${
+                  item.label === timeframe.label ? "bg-emerald-400/[0.18] text-emerald-100" : "text-white/50 hover:text-white"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
           {CHART_OVERLAYS.map((overlay) => (
             <button
               key={overlay.key}
@@ -259,6 +354,20 @@ function calculateRSI(candles, period) {
   return result;
 }
 
+function calculateEMA(candles, period) {
+  if (candles.length < period) return [];
+  const multiplier = 2 / (period + 1);
+  let ema = candles.slice(0, period).reduce((sum, candle) => sum + candle.close, 0) / period;
+  const result = [{ time: candles[period - 1].time, value: Math.round(ema * 100) / 100 }];
+
+  for (let index = period; index < candles.length; index += 1) {
+    ema = (candles[index].close - ema) * multiplier + ema;
+    result.push({ time: candles[index].time, value: Math.round(ema * 100) / 100 });
+  }
+
+  return result;
+}
+
 function calculateATR(candles, period) {
   if (candles.length <= period) return [];
   const result = [];
@@ -298,6 +407,15 @@ function formatPrice(value) {
 function formatChange(value) {
   if (!Number.isFinite(Number(value))) return "0.00%";
   return `${Number(value) > 0 ? "+" : ""}${Number(value).toFixed(2)}%`;
+}
+
+function formatVolume(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "-";
+  if (number >= 1000000000) return `${(number / 1000000000).toFixed(1)}B`;
+  if (number >= 1000000) return `${(number / 1000000).toFixed(1)}M`;
+  if (number >= 1000) return `${(number / 1000).toFixed(1)}K`;
+  return String(Math.round(number));
 }
 
 function formatUpdated(value) {
