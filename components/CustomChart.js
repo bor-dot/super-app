@@ -8,6 +8,7 @@ const TIMEFRAMES = [
   { label: "1Y", range: "1y", interval: "1d" },
   { label: "5Y", range: "5y", interval: "1wk" }
 ];
+const CHART_REFRESH_MS = 60000;
 
 export const CHART_OVERLAYS = [
   {
@@ -104,7 +105,7 @@ export default function CustomChart({ symbol, height = 520, overlays = DEFAULT_O
     }
 
     loadChart();
-    const timer = window.setInterval(loadChart, 60000);
+    const timer = window.setInterval(loadChart, CHART_REFRESH_MS);
     return () => {
       cancelled = true;
       window.clearInterval(timer);
