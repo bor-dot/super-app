@@ -16,3 +16,12 @@ npm run dev
 ## Vercel
 
 Bu repo GitHub'a gönderildiğinde Vercel projeyi otomatik olarak Next.js uygulaması olarak algılar.
+
+- Build command: `npm run build`
+- Development command: `npm run dev`
+- Output directory: Next.js varsayılanı
+
+## Piyasa Motoru
+
+- Grafikler `lightweight-charts` ile yerel candlestick motorunda çizilir.
+- BIST sembol evreni canlı kaynaklardan çekilir; kaynak kesilirse yerel listeye düşer.
