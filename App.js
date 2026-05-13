@@ -219,7 +219,7 @@ function ChartPanel() {
           <span>↶</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="rounded-md border border-emerald-400/30 bg-emerald-400/12 px-3 py-1.5 font-ticker text-xs text-emerald-300">6 KURAL</span>
+          <span className="rounded-md border border-emerald-400/30 bg-emerald-400/[0.12] px-3 py-1.5 font-ticker text-xs text-emerald-300">6 KURAL</span>
           <Icon name="settings" className="text-[18px] text-white/60" />
           <Icon name="photo_camera" className="text-[18px] text-white/60" />
         </div>
@@ -283,7 +283,7 @@ function AnalysisTable() {
     <section className="rounded-xl border border-white/10 bg-[#111719]/90 p-3">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="font-display text-base font-semibold">Ekonomi Analiz</h2>
-        <span className="rounded-md border border-emerald-400/30 bg-emerald-400/12 px-2 py-1 font-ticker text-xs text-emerald-300">6 KURAL</span>
+        <span className="rounded-md border border-emerald-400/30 bg-emerald-400/[0.12] px-2 py-1 font-ticker text-xs text-emerald-300">6 KURAL</span>
       </div>
       <table className="w-full text-left text-xs">
         <thead className="font-ticker uppercase text-white/50">
